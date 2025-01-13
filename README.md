@@ -1,0 +1,8 @@
+# Hunt the Wumpus
+This is a completed project for an introductory college Computer Science course. This implementation of the classic game "Hunt the Wumpus" uses an instruction queue to allow flexible modification of the game state while complying with object-oriented programming prinicples. This structure also allows for game mods to be created with ease and loaded into the game.
+
+## Building the Project
+The project is compatable with both Windows and Linux. The included Makefiles can compile with the `make` command on Linux and with MinGW on Windows. The mod Makefiles will build shared objects that are automatically loaded into the base game.
+
+## Key Takeaways
+The program uses runtime polymorphism to implement specific event functionality. This allows for a clear distinction between each event's unique impact on the game state, and for easy addition of new events in the form of game mods. However, it also presents the question of how much access to the game state should be given to the classes repesenting objects within the game. Flexible access is necessary to allow for each event to perform its own modification to the game state, but passing the game state to each event violates the principles of object-oriented programming. My solution to this problem was to implement an instruction queue for performing updates to the game state, and an event-trigger system for retrieval of instructions. This concept required significant planning before starting to code, but resulted in an elegant system for interactions between different parts of the game. This demonstrates the importance of planning and the possibility of a design that complies with object-oriented programming despite significant obstacles.

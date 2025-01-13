@@ -1,0 +1,5 @@
+**/.obj
+**/.deps
+/wumpus
+*.so
+**/.vscode

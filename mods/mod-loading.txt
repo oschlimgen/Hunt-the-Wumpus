@@ -1,0 +1,31 @@
+How to Mod Hunt the Wumpus
+
+Loading a mod into the game:
+  For a mod to be recognized by the game and loaded, it must be compiled into a
+  shared object file. The game supports both Windows .dll files and Unix .so
+  files. The shared object file must be placed into the folder named 'mods'
+  which should be on the same directory level as the game executable.
+
+Necessary mod format:
+  Each mod should contain one or more classes that inherit from the classes in
+  the base game. It should also contain a function labelel with 'extern "C"'
+  with one of the expected names and signatures, that returns pointers to
+  new instances of the class or classes. The allowed names and signatures are:
+    - Event* getDefaultEvent()
+    - GameSetup* getSetup(const Event* default)
+    - Player* getPlayer(const GameSetup*)
+    - std::vector<Player*> getPlayers(const GameSetup*)
+    - Event* getEvent(const GameSetup*)
+    - std::vector<Event*> getEvents(const GameSetup*)
+    - Cave* getCave(const GameSetup*)
+
+Loading Details:
+  The DefaultEvent, GameSetup, and Cave objects will be set to the base game
+  objects if no mod funciton providing one of them is found. Only one mod
+  function providing each of these may be among the mod files. The Event
+  objects returned by mod files will override the base game events if they
+  have the same value of the eventName property. Otherwise, they will be added
+  to the game in addition to the base game events. If any Player functions are
+  found among the mod files, no additional players will be added to the game.
+
+
