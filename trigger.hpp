@@ -1,14 +1,16 @@
 #ifndef TRIGGER_HPP
 #define TRIGGER_HPP
 
-#include "htwTypes.hpp"
+#include "gameUpdate.hpp"
+#include "item.hpp"
 
 
 class Player;
 
 class Trigger {
 public:
-  static constexpr const char* triggerName = "";
+  static constexpr const char* triggerName = nullptr;
+  static constexpr const char* promptTriggerDirectionID = "TriggerDirection";
 
 protected:
   RoomPos room;
@@ -97,6 +99,21 @@ public:
    *    state (bool): The value to set enabled to.
    */
   void setEnabled(bool state);
+  
+  /*
+   * Function: handleInput
+   * Description: Takes a character input in the form of an item with the
+   *    given name, and returns an update based on the input name and
+   *    character.
+   * Paramters:
+   *    info (Item*): An InfoItem containing the input type and the input
+   *      character.
+   *    other (Trigger*): The player to get input keys from, or the trigger
+   *      to modify.
+   * Returns (GameUpdate::pointer): A list of GameUpdates to execute based on
+   *    the player input.
+   */
+  virtual GameUpdate::pointer handleInput(const Item* info, Trigger* other);
 };
 
 #endif

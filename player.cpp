@@ -25,21 +25,20 @@ void Player::setState(const int curState) {
   state = curState;
 }
 
-void Player::addItem(Item*& item) {
+void Player::addItem(Item* item) {
   for(Item* i : items) {
     if(i->name() == item->name()) {
+      // Item is in the list, so add counts
       i->updateCount(item->getCount());
       delete item;
-      item = nullptr;
       return;
     }
   }
   // Item wasn't in list
   items.push_back(item);
-  item = nullptr;
 }
 
-Item* Player::getItem(const std::string& name) const {
+Item* Player::getItem(const std::string& name) {
   for(Item* i : items) {
     if(i->name() == name) {
       return i;
@@ -48,52 +47,26 @@ Item* Player::getItem(const std::string& name) const {
   return nullptr;
 }
 
-std::string Player::getItems() const {
+bool Player::removeItem(const std::string& name) {
+  for(std::vector<Item*>::iterator it = items.begin();
+      it != items.end(); ++it) {
+    if((*it)->name() == name) {
+      delete *it;
+      items.erase(it);
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string Player::getItemList(const int mode) const {
   std::string itemList;
   for(Item* i : items) {
-    itemList += i->name() + ": " + std::to_string(i->getCount()) + "\n";
+    if(i->isVisible(mode)) {
+      itemList += i->name() + ": " + std::to_string(i->getCount()) + "\n";
+    }
   }
   return itemList;
-}
-
-int Player::toDirection(int input) const {
-  if(input == 'w') {
-    return UpDir;
-  }
-  if(input == 's') {
-    return DownDir;
-  }
-  if(input == 'a') {
-    return LeftDir;
-  }
-  if(input == 'd') {
-    return RightDir;
-  }
-  return NONE;
-}
-
-int Player::toAction(int input) const {
-  if(input == 'f') {
-    return FireAction;
-  }
-  return toDirection(input);
-}
-
-std::string Player::directionOptions() const {
-  return
-      "w: Up\n"
-      "a: Left\n"
-      "s: Down\n"
-      "d: Right\n";
-}
-
-std::string Player::actionOptions() const {
-  return
-      "w: Move Up\n"
-      "a: Move Left\n"
-      "s: Move Down\n"
-      "d: Move Right\n"
-      "f: Fire an Arrow\n";
 }
 
 GameUpdate::pointer Player::turnUpdate(Player* const active, const bool round) {

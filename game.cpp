@@ -4,6 +4,20 @@
 #include <string>
 
 #include "ioSpDef.hpp"
+#include "infoItem.hpp"
+
+
+
+int Game::getAction() {
+  int action = getchEsc();
+  action = tolower(action);
+
+  if(action == 'x') {
+    return GAME_EXIT_CODE;
+  }
+
+  return action;
+}
 
 
 int Game::playerCount() const {
@@ -89,31 +103,15 @@ bool Game::checkLose() const {
 
 bool Game::confirmExit() {
   print("Are you sure you want to exit the game? (y/n): ");
-  int response = getchEsc();
+  int response = getAction();
 
-  response = tolower(response);
-  if(response == 'y' || response == '1') {
+  if(response == 'y') {
     print("y\n\n");
     return true;
   } else {
     print("n\n\n");
     return false;
   }
-}
-
-GameUpdate::pointer Game::turnPrompt() {
-  std::string msg;
-  if(players.size() == 1) {
-    msg += "\nWhat would you like to do? (Press H for options)\n";
-  } else {
-    msg += "\n" + activePlayer()->name() + ": What would you like to do? "
-      "(Press H for options)\n";
-  }
-
-  GameUpdate::pointer update = new GameUpdate(GameUpdate::DisplayText, msg);
-  update.append(new GameUpdate(GameUpdate::PromptPlayerAction,
-      activePlayer()));
-  return update;
 }
 
 bool Game::passUpdate(GameUpdate::pointer& list, const int updateType) {
@@ -209,9 +207,7 @@ GameUpdate::pointer Game::startTurnUpdate() {
   }
 
   update.append(new GameUpdate(GameUpdate::RefreshBoardDisplay));
-
-  GameUpdate::pointer prompt = turnPrompt();
-  update.append(prompt);
+  update.append(new GameUpdate(GameUpdate::PromptTurnAction, activePlayer()));
   return update;
 }
 
@@ -228,9 +224,9 @@ GameUpdate::pointer Game::resolveUpdate(const GameUpdate& update) {
       print("\n(Press any key to continue)\n");
       getchEsc();
     }
-    return new GameUpdate(GameUpdate::ForceGameEnd);
-
-  } else if(update == GameUpdate::LoseGame) {
+    addUpdate = new GameUpdate(GameUpdate::ForceGameEnd);
+  }
+  else if(update == GameUpdate::LoseGame) {
     displayGame();
     activePlayer()->setState(Player::LostGame);
 
@@ -240,25 +236,33 @@ GameUpdate::pointer Game::resolveUpdate(const GameUpdate& update) {
       print("\n(Press any key to continue)\n");
       getchEsc();
     }
-
-  } else if(update == GameUpdate::SetGameMode) {
+  }
+  else if(update == GameUpdate::SetGameMode) {
     cave->setGameMode(update.getInfo());
-
-  } else if(update == GameUpdate::RefreshBoardDisplay) {
+  }
+  else if(update == GameUpdate::RefreshBoardDisplay) {
     displayGame();
     boardDisplayed = true;
-
-  } else if(update == GameUpdate::DisplayText) {
+  }
+  else if(update == GameUpdate::DisplayText) {
     std::string text = update.getMessage() + '\n';
     if(boardDisplayed) {
       print(text);
     } else {
       toDisplay += text;
     }
-
-  } else {
+  }
+  else if(update == GameUpdate::GetPlayerInput) {
+    int input = getAction();
+    Item* info = new InfoItem(update.getMessage(), input);
+    update.getPlayer()->addItem(info);
+    if(update.getInfo() != 0) {
+      addUpdate = new GameUpdate(GameUpdate::HandlePlayerInput,
+          update.getPlayer(), update.getMessage());
+    }
+  }
+  else {
     addUpdate = cave->updateState(update);
-
   }
   return addUpdate;
 }

@@ -13,44 +13,65 @@ public:
   /* Handled by the Game object */
     // No additional information needed
     ForceGameEnd,
+
     // No additional information needed
     ForceUpdateEnd,
+
     // targetTrigger: contains text describing the win
     WinGame,
+
     // targetTrigger: contains text describing the loss
     LoseGame,
+    
     // info: The game mode to switch into
     SetGameMode,
+
     // info == 1: The user will not be prompted for a turn action
     // info == NONE: The player's action will be used
     WaitForMove,
+
     // info == 1: The user will not be prompted for a turn action
     // info == NONE: The player's action will be used
     WaitTurnCycle,
+
     // No additonal information needed
     EndWait,
+
     // No additional information needed
     BeginConditional,
+
     // No additional information needed
     EndConditional,
+
     // No additional information needed
     RefreshBoardDisplay,
-    // targetTrigger: contains the text to display
+
+    // message: contains the text to display
     DisplayText,
+
+    // targetPlayer: the player to attatch the input item to
+    // message: the name of the item to store the input into
+    // ---------- OPTIONAL ---------
+    // info == 0: prevent handling the input immediately
+    GetPlayerInput,
 
 
   /* Handled by the Cave object */
+    // targetPlayer: the player with the item, to delegate the input to
+    // message: the name of the item storing the player input
+    HandlePlayerInput,
+
     // targetPlayer: The active player, to convert keys
-    PromptPlayerAction,
+    PromptTurnAction,
+
     // info == NONE || info == 0: Turn action prompts won't be executed OR
     // info == 1: Re-enables executing turn action prompts
     SetPlayerActionEnabled,
-    // targetPlayer: The active player, to convert keys
-    // targetTrigger: trigger to set the direction of
-    PromptDirection,
+
     // targetEvent: a new Event to place OR
     // targetTrigger: a new Trigger to place
     CreateObject,
+
     // targetEvent: event to move OR
     // targetTrigger: trigger to move OR
     // targetPlayer: player to move
@@ -59,8 +80,9 @@ public:
     // info: direction to move it OR
     // info == NONE (for triggers & players): move in the stored direction
     // ---------- OPTIONAL ---------
-    // targetEvent (for Player only): text to display on failure to move
+    // message (for Player only): text to display on failure to move
     MoveObject,
+
     // targetEvent: event to move OR
     // targetTrigger: trigger to move OR
     // targetPlayer: player to move
@@ -70,31 +92,40 @@ public:
     // info == 2: move to an adjacent room (not necessarily empty) OR
     // info == 3: move to an EMPTY adjacent room
     MoveObjectRandom,
+
     // targetEvent: event to remove OR
     // targetTrigger: trigger to remove
     DestroyObject,
+
     // targetPlayer: player to add Item to,
     // targetEvent: event to query for Item,
     // ---------- OPTIONAL ---------
     // info: number of the item to add
     PickupItem,
+
     // targetPlayer: player to remove the Item from
-    // targetEvent: contains the text name of the item to check for
-    // ---------- OPTIONAL ---------
-    // info: number of item to remove 
+    // message: contains the text name of the item to check for
+    // ------------ AND ------------
+    // info == 0: completely remove the item, regardless of count OR
+    // info: number of item to remove
     RemoveItem,
+
     // targetPlayer: player to check for item
-    // targetEvent: contains the text name of the item to check for
-    // ---------- OPTIONAL ---------
-    // info: number of item to check for OR
-    // info == 0: checks if player has none of the item to proceed
+    // message: contains the text name of the item to check for
+    // info: proceeds if player has at least this number of the item
     ItemConditional,
+
+    // targetPlayer: player to check for item
+    // message: contains the text name of the item to check for
+    // info: proceeds if player has exactly this number of the item
+    ItemConditionalExact,
+
     // info: boolean value to set enabled to
     SetObjectEnabled,
+
     // targetTrigger: trigger for the Event to react to OR
     // targetPlayer: player for the Event to react to
-    // ------------ AND ------------
-    // targetEvent: contains the text name of the event to trigger
+    // message: contains the text name of the event to trigger
     TriggerEvent,
   };
   
@@ -155,13 +186,16 @@ public:
 
   GameUpdate(int type, Player* player, Event* event);
   GameUpdate(int type, Player* player, Event* event, int info);
+  GameUpdate(int type, Player* player, Event* event, const std::string& message);
   GameUpdate(int type, Player* player, Trigger* trigger);
   GameUpdate(int type, Player* player, Trigger* trigger, int info);
+  GameUpdate(int type, Player* player, Trigger* trigger, const std::string& message);
 
   GameUpdate(int type, Event* event, const std::string& message);
   GameUpdate(int type, Event* event, const std::string& message, int info);
   GameUpdate(int type, Trigger* trigger, const std::string& message);
   GameUpdate(int type, Trigger* trigger, const std::string& message, int info);
+
   
   /*
    * Function: Complete Constructor

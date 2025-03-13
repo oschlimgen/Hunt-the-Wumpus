@@ -5,6 +5,7 @@
 #include <vector>
 
 #define NONE -1
+#define GAME_EXIT_CODE 0
 
 /*
  * Function: isNone

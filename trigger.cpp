@@ -1,5 +1,10 @@
 #include "trigger.hpp"
 
+#include <stdexcept>
+
+#include "gameUpdatePointer.hpp"
+
+
 
 Trigger::Trigger(const RoomPos& room) : room(room), moveDir(NONE), enabled(true) {}
 
@@ -28,4 +33,12 @@ int Trigger::getDirection() const {
 }
 void Trigger::setDirection(int dir) {
   moveDir = dir;
+}
+
+GameUpdate::pointer Trigger::handleInput(const Item* info, Trigger* other) {
+  if(info->name() == promptTriggerDirectionID) {
+    return other->handleInput(info, this);
+  }
+  throw std::runtime_error("Trigger HandleInput not implemented for input "
+      "type: " + info->name());
 }

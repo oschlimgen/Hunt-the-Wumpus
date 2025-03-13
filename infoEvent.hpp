@@ -1,5 +1,5 @@
-#ifndef TEXT_EVENT_HPP
-#define TEXT_EVENT_HPP
+#ifndef INFO_EVENT_HPP
+#define INFO_EVENT_HPP
 
 #include "event.hpp"
 

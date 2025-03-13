@@ -19,6 +19,13 @@ private:
 
   bool boardDisplayed;
   std::string toDisplay;
+  
+  /*
+   * Function: getAction
+   * Description: Waits for an action from the user in the form of a key press.
+   * Returns (int): The (possibly invalid) action provided by the player.
+   */
+  static int getAction();
 
   /*
    * Function: playerCount
@@ -79,16 +86,7 @@ private:
    * Returns (bool): True if the player wishes to exit, and false otherwise.
    * Effects: Displays a prompt and waits for a response.
    */
-  static bool confirmExit();
-
-  /*
-   * Function: turnPrompt
-   * Description: Returns an update sequence that displays a prompt to take a
-   *    turn action, then waits for an action input.
-   * Returns (GameUpdate::pointer): The updates to perform that will prompt the
-   *    user for an action.
-   */
-  GameUpdate::pointer turnPrompt();
+  bool confirmExit();
 
   /*
    * Function: passUpdate

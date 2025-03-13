@@ -18,13 +18,24 @@
 
 #include <iostream>
 
-#define GET_DEFAULT_EVENT "getDefaultEvent" // Event* getDefaultEvent()
-#define GET_GAME_SETUP "getSetup" // GameSetup* getSetup(Event* default)
-#define GET_PLAYER "getPlayer" // Player* getPlayer(GameSetup*)
-#define GET_PLAYERS_LIST "getPlayers" // std::vector<Player*> getPlayers(GameSetup*)
-#define GET_EVENT "getEvent" // Event* getEvent(GameSetup*)
-#define GET_EVENTS_LIST "getEvents" // std::vector<Event*> getEvents(GameSetup*)
-#define GET_CAVE "getCave" // Cave* getCave(GameSetup*)
+#define GET_DEFAULT_EVENT "getDefaultEvent"
+#define GET_DEFAULT_EVENT_FUNC Event* getDefaultEvent()
+
+#define GET_GAME_SETUP "getSetup"
+#define GET_GAME_SETUP_FUNC GameSetup* getSetup(const Event* defaultEvent)
+
+#define GET_PLAYER "getPlayer"
+#define GET_PLAYER_FUNC Player* getPlayer(const GameSetup* setup)
+#define GET_PLAYERS_LIST "getPlayers"
+#define GET_PLAYERS_LIST_FUNC std::vector<Player*> getPlayers(const GameSetup* setup)
+
+#define GET_EVENT "getEvent"
+#define GET_EVENT_FUNC Event* getEvent(const GameSetup* setup)
+#define GET_EVENTS_LIST "getEvents"
+#define GET_EVENTS_LIST_FUNC std::vector<Event*> getEvents(const GameSetup* setup)
+
+#define GET_CAVE "getCave"
+#define GET_CAVE_FUNC Cave* getCave(const GameSetup* setup)
 
 class LoadMods {
 private:

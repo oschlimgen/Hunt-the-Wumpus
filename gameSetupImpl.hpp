@@ -7,7 +7,7 @@
 
 
 class BasicSetup : public GameSetup {
-private:
+protected:
   /*
    * Function: randomNumber
    * Description: Returns a random number between zero (inclusive) and the

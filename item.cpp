@@ -3,10 +3,6 @@
 
 Item::Item(const int count) : itemCount(count) {}
 
-Item::operator bool() {
-  return itemCount > 0;
-}
-
 int Item::getCount() const {
   return itemCount;
 }
@@ -16,4 +12,8 @@ void Item::updateCount(const int toAdd) {
   if(itemCount < 0) {
     itemCount = 0;
   }
+}
+
+bool Item::isVisible(const int gameMode) const {
+  return true;
 }

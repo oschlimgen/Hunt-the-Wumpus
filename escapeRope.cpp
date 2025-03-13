@@ -19,9 +19,9 @@ std::string EscapeRope::name() const {
 
 GameUpdate::pointer EscapeRope::triggerUpdate(Trigger* const trigger) {
   if(trigger->player()) {
-    GameUpdate::pointer update = new GameUpdate(GameUpdate::ItemConditional,
-        trigger, GoldItem::itemName);
-    
+    GameUpdate::pointer update;
+    update.append(new GameUpdate(GameUpdate::ItemConditional,
+        trigger, GoldItem::itemName, 1));
     update.append(new GameUpdate(GameUpdate::WinGame,
         "You have escaped with the gold of the fearsome Wumpus!"));
     update.append(new GameUpdate(GameUpdate::EndConditional));

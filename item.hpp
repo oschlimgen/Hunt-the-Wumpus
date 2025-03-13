@@ -16,13 +16,6 @@ public:
   Item(int count);
 
   /*
-   * Function: Implicit bool Conversion
-   * Description: Evaluates to true if the itemCount is greater than zero, and
-   *    evaluates to false otherwise.
-   */
-  operator bool();
-
-  /*
    * Function: getCount
    * Description: Simple getter for itemCount.
    * Returns (int): The vaule of itemCount.
@@ -35,7 +28,17 @@ public:
    * Parameters:
    *    toAdd (int): The value to add to itemCount.
    */
-  void updateCount(int toAdd);
+  virtual void updateCount(int toAdd);
+  
+  /*
+   * Function: isVisible
+   * Description: Returns true if the item should be displayed to the player.
+   * Parameters:
+   *    mode (int): The current game display mode.
+   * Returns: true if the item should be displayed to the player, and false
+   *    otherwise.
+   */
+  virtual bool isVisible(int mode) const;
 
   /*
    * Function: name

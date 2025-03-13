@@ -1,13 +1,11 @@
 #include "caveImpl.hpp"
 
 #include <stdexcept>
+#include <sstream>
 
-#include "ioSpDef.hpp"
 #include "arrowItem.hpp"
 #include "arrowTrigger.hpp"
 #include "wumpus.hpp"
-
-#define EXIT_CODE 0
 
 
 
@@ -16,17 +14,6 @@ Room& BasicCave::getRoom(const RoomPos& pos) {
 }
 const Room& BasicCave::getRoom(const RoomPos& pos) const {
   return cave.at(pos.row).at(pos.col);
-}
-
-int BasicCave::getAction() {
-  int action = getchEsc();
-  action = tolower(action);
-
-  if(action == 'x') {
-    return EXIT_CODE;
-  }
-
-  return action;
 }
 
 RoomPos BasicCave::addDirection(const RoomPos& room,
@@ -135,8 +122,27 @@ int BasicCave::chooseEmptyDirection(const RoomPos& pos) {
 
 
 
-std::string BasicCave::getItems(Player* player) const {
-  return player->getItems();
+std::string BasicCave::joinLines(const std::string& left,
+    const std::string& right, int spacing) {
+  std::stringstream lss(left);
+  std::stringstream rss(right);
+
+  std::string combined;
+  std::string lline;
+  std::string rline;
+  while(true) {
+    bool rresult = (bool)std::getline(lss, lline);
+    bool lresult = (bool)std::getline(rss, rline);
+    if(!rresult && !lresult) {
+      break;
+    }
+    combined += lline + std::string(spacing, ' ') + rline + '\n';
+  }
+  return combined;
+}
+
+std::string BasicCave::getItemList(Player* player) const {
+  return player->getItemList(gameMode);
 }
 
 std::string BasicCave::getBoard() const {
@@ -145,6 +151,7 @@ std::string BasicCave::getBoard() const {
   for (int i = 0; i < width; ++i) {
     row_border += "----";
   }
+  row_border += " ";
 
   board += row_border + "\n";
   for (int i = 0; i < height; ++i) {
@@ -196,134 +203,145 @@ std::string BasicCave::getPercepts(Player* const player) const {
 }
 
 
-GameUpdate::pointer BasicCave::actionUpdate(Player* const player,
-    const int actionInput) {
-  GameUpdate::pointer update = nullptr;
-  if(actionInput == 'h') {
-    update = new GameUpdate(GameUpdate::DisplayText,
-        player->actionOptions() + "x: Exit the Game\n");
-    update.append(new GameUpdate(GameUpdate::PromptPlayerAction, player));
-    
-  } else if(notNone(player->toDirection(actionInput))) {
-    // W/A/S/D = move player
-    update = new GameUpdate(GameUpdate::MoveObject, player,
-        "You can't move in that direction! Please try again.",
-        player->toDirection(actionInput));
 
-  } else if(actionInput == ' ') {
-    update = fireArrow(player);
-  }
-
-  if(!update) {
-    update = new GameUpdate(GameUpdate::DisplayText,
-        "Invalid action. Please try again.");
-    update.append(new GameUpdate(GameUpdate::PromptPlayerAction, player));
-  }
-  return update;
-}
-
-GameUpdate::pointer BasicCave::fireArrow(Player* const active) {
-  Trigger* arrow = new ArrowTrigger(active->getLocation());
-  
-  // Check to make sure the player has arrows
-  GameUpdate::pointer update = new GameUpdate(GameUpdate::ItemConditional,
-      active, ArrowItem::itemName, 0);
-  update.append(new GameUpdate(GameUpdate::DisplayText,
-      "You don't have any arrows!")); // String not getting freed
-  update.append(new GameUpdate(GameUpdate::PromptPlayerAction, active));
-  update.append(new GameUpdate(GameUpdate::EndConditional));
-  
-  // Display the choice of direction prompt
-  update.append(new GameUpdate(GameUpdate::DisplayText,
-      "What direction would you like to fire in?"));
-  
-  // Prompt the player for the direction to fire the arrow
-  update.append(new GameUpdate(GameUpdate::PromptDirection, active, arrow));
-
-  // Remove one from the player's arrow count
-  update.append(new GameUpdate(GameUpdate::RemoveItem, active,
-      ArrowItem::itemName));
-  
-  // Move the arrow the correct number of spaces
-  for(int i = 0; i < arrowFireDist; ++i) {
-    update.append(new GameUpdate(GameUpdate::MoveObject, arrow)); // not getting freed
-  }
-
-  // Trigger the wumpus before removing the arrow
-  update.append(new GameUpdate(GameUpdate::TriggerEvent, arrow,
-      Wumpus::eventName));
-
-  // Make sure to delete the arrow
-  update.append(new GameUpdate(GameUpdate::DestroyObject, arrow,
-      GameUpdate::WhatToDelete::TargetTrigger));
-
-  return update;
-}
-
-
-GameUpdate::pointer BasicCave::promptForPlayerAction(const GameUpdate& update) {
-  if(playerActionEnabled) {
-    // Ask player for their action
-    int action = getAction();
-    if(action == EXIT_CODE) {
-      // Quit the game (player entered 'x')
-      GameUpdate::pointer addUpdate = new GameUpdate(GameUpdate::ForceGameEnd);
-      return addUpdate;
-    }
-    
-    // Restart the update list with update(s) based on the player action.
-    GameUpdate::pointer addUpdate = actionUpdate(update.getPlayer(), action);
-    addUpdate.append(new GameUpdate(GameUpdate::ForceUpdateEnd));
-    return addUpdate;
-  }
-  return nullptr;
-}
-
-GameUpdate::pointer BasicCave::handleDirectionInput(const GameUpdate& update,
-    const int action) {
-  int direction = update.getPlayer()->toDirection(action);
-
-  GameUpdate::pointer addUpdate = nullptr;
-  if(notNone(direction)) {
-    if(update.hasTrigger()) {
-      update.getTrigger()->setDirection(direction);
-    } else {
-      update.getPlayer()->setDirection(direction);
-    }
-    // No need to re-prompt player, return nullptr
-
+GameUpdate::pointer BasicCave::turnPrompt(Player* player) {
+  std::string msg;
+  if(player->name().empty()) {
+    msg += "\nWhat would you like to do? (Press H for options)\n";
   } else {
-    // Reprompt for direction
-    addUpdate = new GameUpdate(GameUpdate::DisplayText,
-        "Please enter a valid direction.");
-    addUpdate.append(new GameUpdate(update));
-    
+    msg += "\n" + player->name() + ": What would you like to do? "
+      "(Press H for options)\n";
   }
+
+  GameUpdate::pointer update = new GameUpdate(GameUpdate::DisplayText, msg);
+  update.append(new GameUpdate(GameUpdate::GetPlayerInput, player,
+      Player::turnActionID));
+  return update;
+}
+
+GameUpdate::pointer BasicCave::handlePlayerInput(const GameUpdate& update) {
+  Item* info = update.getPlayer()->getItem(update.getMessage());
+  if(!info) {
+    throw std::runtime_error("HandlePlayerInput update couldn't find the "
+        "player input item with the given name.");
+  }
+
+  GameUpdate::pointer addUpdate;
+  if(update.hasTrigger()) {
+    addUpdate = update.getTrigger()->handleInput(info, update.getPlayer());
+  }
+  else {
+    addUpdate = update.getPlayer()->handleInput(info, nullptr);
+  }
+  update.getPlayer()->removeItem(info->name());
   return addUpdate;
 }
 
-GameUpdate::pointer BasicCave::promptForDirection(const GameUpdate& update) {
-  if(!update.hasPlayer()) {
-    throw std::runtime_error("No Player assigned to "
-        "PromptDirection GameUpdate.");
-  }
-  
-  int action = getAction();
-  if(action == EXIT_CODE) {
-    // Quit the game (player entered 'x')
-    GameUpdate::pointer addUpdate =  new GameUpdate(GameUpdate::ForceGameEnd);
-    addUpdate.append(new GameUpdate(update));
-    return addUpdate;
-  }
-  if(action == 'h') {
-    GameUpdate::pointer addUpdate = new GameUpdate(GameUpdate::DisplayText,
-        update.getPlayer()->directionOptions() + "x: Exit The Game\n");
-    addUpdate.append(new GameUpdate(update));
-    return addUpdate;
-  }
+// GameUpdate::pointer BasicCave::actionUpdate(Player* const player,
+//     const int actionInput) {
+//   GameUpdate::pointer update = nullptr;
+//   if(actionInput == 'h') {
+//     update = new GameUpdate(GameUpdate::DisplayText,
+//         player->actionOptions() + "x: Exit the Game\n");
+//     update.append(new GameUpdate(GameUpdate::GetPlayerInput,
+//         player, turnActionID));
+    
+//   } else if(notNone(player->toDirection(actionInput))) {
+//     // W/A/S/D = move player
+//     update = new GameUpdate(GameUpdate::MoveObject, player,
+//         "You can't move in that direction! Please try again.",
+//         player->toDirection(actionInput));
 
-  return handleDirectionInput(update, action);
-}
+//   } else if(actionInput == ' ') {
+//     update = player->getFireAction();
+//   }
+
+//   if(!update) {
+//     update = new GameUpdate(GameUpdate::DisplayText,
+//         "Invalid action. Please try again.");
+//     update.append(new GameUpdate(GameUpdate::GetPlayerInput,
+//         player, turnActionID));
+//   }
+//   return update;
+// }
+
+
+// GameUpdate::pointer BasicCave::handlePlayerAction(const GameUpdate& update) {
+//   if(playerActionEnabled) {
+//     // Ask player for their action
+//     int action = update.getPlayer()->getItem(update.getMessage())->getCount();
+//     if(action == GAME_EXIT_CODE) {
+//       // Quit the game (player entered 'x')
+//       GameUpdate::pointer addUpdate = new GameUpdate(GameUpdate::ForceGameEnd);
+//       return addUpdate;
+//     }
+    
+//     // Restart the update list with update(s) based on the player action.
+//     GameUpdate::pointer addUpdate = actionUpdate(update.getPlayer(), action);
+//     addUpdate.append(new GameUpdate(GameUpdate::ForceUpdateEnd));
+//     return addUpdate;
+//   }
+//   return nullptr;
+// }
+
+// GameUpdate::pointer BasicCave::handleDirectionInput(const GameUpdate& update) {
+//   Item* infoItem = update.getPlayer()->getItem(update.getMessage());
+//   int direction = NONE;
+//   if(infoItem) {
+//     direction = update.getPlayer()->toDirection(infoItem->getCount());
+//   }
+
+//   GameUpdate::pointer addUpdate = nullptr;
+//   if(notNone(direction)) {
+//     if(update.hasTrigger()) {
+//       update.getTrigger()->setDirection(direction);
+//     } else {
+//       update.getPlayer()->setDirection(direction);
+//     }
+//     // No need to re-prompt player, return nullptr
+//   }
+//   else {
+//     // Reprompt for direction
+//     addUpdate = new GameUpdate(GameUpdate::DisplayText,
+//         "Please enter a valid direction.");
+//     addUpdate.append(new GameUpdate(GameUpdate::PromptDirection,
+//         update.getPlayer()));
+//   }
+//   return addUpdate;
+// }
+
+// GameUpdate::pointer BasicCave::promptForDirection(const GameUpdate& update) {
+//   if(!update.hasPlayer()) {
+//     throw std::runtime_error("No Player assigned to "
+//         "PromptDirection GameUpdate.");
+//   }
+//   Player* player = update.getPlayer();
+  
+//   GameUpdate::pointer addUpdate;
+//   addUpdate.append(new GameUpdate(GameUpdate::GetPlayerInput,
+//       player, directionPromptID, 0));
+  
+//   // Check to quit the game (player entered 'x')
+//   addUpdate.append(new GameUpdate(GameUpdate::ItemConditionalExact,
+//       player, directionPromptID, GAME_EXIT_CODE));
+//   addUpdate.append(new GameUpdate(GameUpdate::ForceGameEnd));
+//   addUpdate.append(new GameUpdate(GameUpdate::RemoveItem, directionPromptID));
+//   addUpdate.append(new GameUpdate(update));
+//   addUpdate.append(new GameUpdate(GameUpdate::EndConditional));
+
+//   // Check to display help menu (player entered 'h')
+//   addUpdate.append(new GameUpdate(GameUpdate::ItemConditionalExact,
+//       player, directionPromptID, 'h'));
+//   addUpdate.append(new GameUpdate(GameUpdate::DisplayText,
+//         player->directionOptions() + "x: Exit The Game\n"));
+//   addUpdate.append(new GameUpdate(GameUpdate::RemoveItem, directionPromptID));
+//   addUpdate.append(new GameUpdate(update));
+//   addUpdate.append(new GameUpdate(GameUpdate::EndConditional));
+
+//   addUpdate.append(new GameUpdate(GameUpdate::HandlePlayerInput,
+//       player, directionPromptID));
+//   return addUpdate;
+// }
 
 
 void BasicCave::createObject(const GameUpdate& update) {
@@ -392,8 +410,10 @@ GameUpdate::pointer BasicCave::movePlayer(const GameUpdate& update) {
   if(pl->getEnabled() && from != moveTo) {
     triggered = getRoom(moveTo).triggerEvents(pl);
   } else if(!update.getMessage().empty()) {
-    triggered = new GameUpdate(GameUpdate::DisplayText, update.getMessage());
-    triggered.append(new GameUpdate(GameUpdate::PromptPlayerAction, pl));
+    triggered.append(new GameUpdate(GameUpdate::DisplayText,
+        update.getMessage()));
+    triggered.append(new GameUpdate(GameUpdate::GetPlayerInput,
+        pl, Player::turnActionID));
   }
   return triggered;
 }
@@ -499,22 +519,44 @@ void BasicCave::destroyObject(const GameUpdate& update) {
 }
 
 
+void BasicCave::pickupItem(const GameUpdate& update) {
+  Item* item = update.getEvent()->getItem();
+  update.getPlayer()->addItem(item);
+}
+
+void BasicCave::removeItem(const GameUpdate& update) {
+  Item* item = update.getPlayer()->getItem(update.getMessage());
+  if(item) {
+    if(isNone(update.getInfo())) {
+      throw std::runtime_error("RemoveItem update must have info value"
+          " assigned.");
+    }
+    else if(update.getInfo() == 0 || item->getCount() <= update.getInfo()) {
+      update.getPlayer()->removeItem(item->name());
+    }
+    else {
+      item->updateCount(-update.getInfo());
+    }
+  }
+}
+
+
 GameUpdate::pointer BasicCave::evaluateItemConditional(
     const GameUpdate& update) {
-  Item* item = update.getPlayer()->getItem(update.getMessage());
   bool checkPassed = false;
+  Item* item = update.getPlayer()->getItem(update.getMessage());
+  int itemCount = 0;
   if(item) {
-    if(notNone(update.getInfo())) {
-      if(update.getInfo() == 0) {
-        checkPassed = item->getCount() == 0;
-      } else {
-        checkPassed = item->getCount() >= update.getInfo();
-      }
-    } else {
-      checkPassed = *item;
-    }
-  } else if(update.getInfo() == 0) {
-    checkPassed = true;
+    itemCount = item->getCount();
+  }
+  if(isNone(update.getInfo())) {
+    throw std::runtime_error("ItemConditional doesn't have info set.");
+  }
+  else if(update == GameUpdate::ItemConditional) {
+    checkPassed = (itemCount >= update.getInfo());
+  }
+  else if(update == GameUpdate::ItemConditionalExact) {
+    checkPassed = (itemCount == update.getInfo());
   }
 
   if(!checkPassed) {
@@ -560,11 +602,13 @@ BasicCave::BasicCave(const GameSetup* const setup) : Cave() {
 
 
 std::string BasicCave::turnDisplay(Player* const active) {
-  std::string output;
+  std::string items;
   if(active) {
-    output += getItems(active);
+    items = "\n" + getItemList(active);
   }
-  output += getBoard();
+  std::string board = getBoard();
+
+  std::string output = joinLines(board, items, 4);
   if(active) {
     output += getPercepts(active);
   }
@@ -587,52 +631,40 @@ GameUpdate::pointer BasicCave::getTurnUpdate(Player* const active,
 
 GameUpdate::pointer BasicCave::updateState(const GameUpdate& update) {
   GameUpdate::pointer addUpdate = nullptr;
-  if(update == GameUpdate::PromptPlayerAction) {
-    addUpdate = promptForPlayerAction(update);
-
-  } else if(update == GameUpdate::SetPlayerActionEnabled) {
-    if(update.getInfo() == 1) {
-      playerActionEnabled = true;
-    } else {
-      playerActionEnabled = false;
-    }
-
-  } else if(update == GameUpdate::PromptDirection) {
-    addUpdate = promptForDirection(update);
-
-  } else if(update == GameUpdate::CreateObject) {
+  if(update == GameUpdate::HandlePlayerInput) {
+    addUpdate = handlePlayerInput(update);
+  }
+  if(update == GameUpdate::PromptTurnAction) {
+    addUpdate = turnPrompt(update.getPlayer());
+  }
+  else if(update == GameUpdate::SetPlayerActionEnabled) {
+    playerActionEnabled = (update.getInfo() >= 1);
+  }
+  else if(update == GameUpdate::CreateObject) {
     createObject(update);
-
-  } else if(update == GameUpdate::MoveObject ||
+  }
+  else if(update == GameUpdate::MoveObject ||
       update == GameUpdate::MoveObjectRandom) {
     addUpdate = moveObject(update);
-
-  } else if(update == GameUpdate::DestroyObject) {
+  }
+  else if(update == GameUpdate::DestroyObject) {
     destroyObject(update);
-
-  } else if(update == GameUpdate::PickupItem) {
-    Item* item = update.getEvent()->getItem();
-    update.getPlayer()->addItem(item);
-
-  } else if(update == GameUpdate::RemoveItem) {
-    Item* item = update.getPlayer()->getItem(update.getMessage());
-    if(item) {
-      if(isNone(update.getInfo())) {
-        item->updateCount(-1);
-      } else {
-        item->updateCount(-update.getInfo());
-      }
-    }
-
-  } else if(update == GameUpdate::ItemConditional) {
+  }
+  else if(update == GameUpdate::PickupItem) {
+    pickupItem(update);
+  }
+  else if(update == GameUpdate::RemoveItem) {
+    removeItem(update);
+  }
+  else if(update == GameUpdate::ItemConditional ||
+      update == GameUpdate::ItemConditionalExact) {
     addUpdate = evaluateItemConditional(update);
-
-  } else if(update == GameUpdate::SetObjectEnabled) {
-    update.getTrigger()->setEnabled((bool)update.getInfo());
-
-  } else if(update == GameUpdate::TriggerEvent) {
+  }
+  else if(update == GameUpdate::SetObjectEnabled) {
+    update.getTrigger()->setEnabled(update.getInfo() >= 1);
+  }
+  else if(update == GameUpdate::TriggerEvent) {
     addUpdate = triggerEventWithName(update);
-
   }
   return addUpdate;
 }

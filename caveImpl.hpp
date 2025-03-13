@@ -5,10 +5,7 @@
 
 
 class BasicCave : public Cave {
-private:
-  static constexpr int arrowFireDist = 3;
-
-private:
+protected:
   int height;
   int width;
   std::vector<std::vector<Room>> cave;
@@ -26,13 +23,6 @@ private:
    */
   Room& getRoom(const RoomPos& pos);
   const Room& getRoom(const RoomPos& pos) const;
-  
-  /*
-   * Function: getAction
-   * Description: Waits for an action from the user in the form of a key press.
-   * Returns (int): The (possibly invalid) action provided by the player.
-   */
-  int getAction();
   
   /*
    * Function: addDirection
@@ -84,14 +74,28 @@ private:
   int chooseEmptyDirection(const RoomPos& pos);
 
 
+  /*
+   * Function: joinLines
+   * Description: Takes two strings and combines each of their lines (newline
+   *    character separated), separated by the given number of spaces.
+   * Parameters:
+   *    left (string): The lines to place on the left side.
+   *    right (string): The lines to place on the right side.
+   *    spacing (int): The number of spaces to add between each side.
+   * Returns (string): The combination of the lines from the left and right
+   *    sides.
+   */
+  std::string joinLines(const std::string& left, const std::string& right,
+      int spacing);
+
   /* 
-   * Function: getItems
+   * Function: getItemList
    * Description: Returns a string of items to display.
    * Parameters:
    *    player (Player*): The player to get the items of.
    * Returns (string): A textual representation of the player's items.
    */
-  std::string getItems(Player* player) const;
+  std::string getItemList(Player* player) const;
 
   /*
    * Function: getBoard
@@ -114,6 +118,29 @@ private:
    */
   std::string getPercepts(Player* player) const;
   
+  
+  /*
+   * Function: turnPrompt
+   * Description: Returns an update sequence that displays a prompt to take a
+   *    turn action, then waits for an action input.
+   * Parameters:
+   *    player (Player*): The active player.
+   * Returns (GameUpdate::pointer): The updates to perform that will prompt the
+   *    user for an action.
+   */
+  GameUpdate::pointer turnPrompt(Player* player);
+
+  /*
+   * Function: handlePlayerInput
+   * Description: Delegates the player input to the correct object to handle.
+   * Parameters:
+   *    update (GameUpdate): References the object to delegate to, and the
+   *      player input type and character.
+   * Returns (GameUpdate::pointer): A list of GameUpdates to execute because of
+   *    the player input.
+   */
+  GameUpdate::pointer handlePlayerInput(const GameUpdate& update);
+
   /*
    * Function: getActionUpdate
    * Description: Creates one or more GameUpdate objects that describe how the
@@ -123,20 +150,10 @@ private:
    *    actionInput (int): The key from getch() entered by the player
    * Returns (GameUpdate::pointer): The updates to perform to the game state.
    */
-  GameUpdate::pointer actionUpdate(Player* player, int actionInput);
+  // GameUpdate::pointer actionUpdate(Player* player, int actionInput);
   
   /*
-   * Function: fireArrow
-   * Description: Prompts the user for a directino, then fires an arrow in the
-   *    direction specified
-   * Parameters:
-   * Post-condition: Arrow is fired. Wumpus is killed if hit and moves if
-   *     missed.
-   */
-  GameUpdate::pointer fireArrow(Player* active);
-  
-  /*
-   * Function: promptForPlayerAction
+   * Function: handlePlayerAction
    * Description: Reprompts the user through the update loop until they enter
    *    a valid input action, then returns GameUpdate objects corresponding to
    *    the given action.
@@ -146,7 +163,7 @@ private:
    *    chosen action. If an invalid action was entered, returns GameUpdates
    *    describing how to re-prompt the user.
    */
-  GameUpdate::pointer promptForPlayerAction(const GameUpdate& update);
+  // GameUpdate::pointer handlePlayerAction(const GameUpdate& update);
   
   /*
    * Function: handleDirectionInput
@@ -159,8 +176,7 @@ private:
    * Returns (GameUpdate::pointer): The update to execute based on what the
    *    player entered.
    */
-  GameUpdate::pointer handleDirectionInput(const GameUpdate& update,
-      int action);
+  // GameUpdate::pointer handleDirectionInput(const GameUpdate& update);
 
   /*
    * Function: promptForDirection
@@ -173,7 +189,7 @@ private:
    * Returns (GameUpdate::pointer): GameUpdates describing how to re-prompt the
    *    player if necessary. If a valid direction was entered, returns nullptr.
    */
-  GameUpdate::pointer promptForDirection(const GameUpdate& update);
+  // GameUpdate::pointer promptForDirection(const GameUpdate& update);
 
   /*
    * Function: createObject
@@ -257,6 +273,28 @@ private:
    * Effects: Removes the object from the cave.
    */
   void destroyObject(const GameUpdate& update);
+
+  /*
+   * Function: pickupItem
+   * Description: Queries the attatched event for an item to pick up, and
+   *    adds it to the attatched player.
+   * Parameters:
+   *    update (GameUpdate): The update containing the event to query.
+   * Effects: Adds an item returned by the event to the player.
+   */
+  void pickupItem(const GameUpdate& update);
+
+  /*
+   * Function: removeItem
+   * Description: Removes a number of the item with the given name from the
+   *    player, and deletes the item if none are left.
+   * Parameters:
+   *    update (GameUpdate): Contains the player to remove from, the name of
+   *      the item, and the number to remove.
+   * Effects: Removes a number of the specified item from the player. May
+   *    delete the item pointer.
+   */
+  void removeItem(const GameUpdate& update);
 
   /*
    * Function: evaluateItemConditional

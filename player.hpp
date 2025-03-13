@@ -15,6 +15,8 @@ public:
     Active = 2
   };
 
+  static constexpr const char* turnActionID = "TurnAction";
+
 protected:
   // 0: Lost, 1: Won, 2: Active, NONE: Still Playing
   int state;
@@ -53,17 +55,7 @@ public:
    *    a valid player pointer.
    */
   Player* player() override;
-
-  /*
-   * Function: character
-   * Description: Gets the character associated with the player to mark their
-   *    position.
-   * Parameters:
-   *    mode (int): The game display mode.
-   * Returns (char): A character representing the player.
-   */
-  virtual char character(int mode) const = 0;
-
+  
   /*
    * Function: getState
    * Description: Getter for the state of the player.
@@ -84,11 +76,11 @@ public:
    *    their quantities and deletes the item. If it doesn't exist in the items
    *    list, adds it to the list.
    * Parameters:
-   *    item (Item*): The item to add to the player. Will be set to nullptr
-   *      after the funciton call.
+   *    item (Item*): The item to add to the player. Shouldn't be de-referenced
+   *      after the function call.
    * Effects: Adds to the item vector, and sets passed item pointer to nullptr.
    */
-  void addItem(Item*& item);
+  void addItem(Item* item);
 
   /*
    * Function: getItem
@@ -99,51 +91,38 @@ public:
    * Returns (Item*): A pointer to the item with the given name, or returns
    *    nullptr if it isn't found in the player's item list.
    */
-  Item* getItem(const std::string& name) const;
+  Item* getItem(const std::string& name);
+  
+  /*
+   * Function: removeItem
+   * Description: Removes the item with the given name from the player's item
+   *    list.
+   * Parameters:
+   *    name (string): The name of the item to remove.
+   * Returns (bool): True if an item with the given name is found.
+   * Effects: Removes any items with the given name from the list of items.
+   */
+  bool removeItem(const std::string& name);
 
   /*
-   * Function: getItems
+   * Function: character
+   * Description: Gets the character associated with the player to mark their
+   *    position.
+   * Parameters:
+   *    mode (int): The game display mode.
+   * Returns (char): A character representing the player.
+   */
+  virtual char character(int mode) const = 0;
+
+  /*
+   * Function: getItemList
    * Description: Returns a text list of items the player has.
+   * Parameters:
+   *    mode (int): The game display mode.
    * Returns (string): A list of items and the associated count,
    *    separated by new lines.
    */
-  virtual std::string getItems() const;
-
-  /*
-   * Function: toDirection
-   * Description: Returns a direction if the given character is a valid
-   *    direction character (w/a/s/d) and NONE otherwise
-   * Parameters:
-   *     input (int): The character to check
-   * Returns (int): Direction corresponding to the character or NONE.
-   */
-  virtual int toDirection(int input) const;
-
-  /*
-   * Function: toAction
-   * Description: Returns a number corresponding to Actions if the given
-   *    character is a valid action input, and NONE otherwise.
-   * Parameters:
-   *    input (int): The character to check
-   * Returns (int): Action associated with the character or NONE.
-   */
-  virtual int toAction(int input) const;
-
-  /*
-   * Function: directionOptions
-   * Description: Creates a string to be displayed to the user describing
-   *    which keys they may press to move.
-   * Returns (string): Describes the movement/direction keys to the user.
-   */
-  virtual std::string directionOptions() const;
-
-  /*
-   * Function: actionOptions
-   * Description: Creates a string to be displayed to the user describing
-   *    which keys they may press to take an action on their turn.
-   * Returns (string): Describes the action keys to the user.
-   */
-  virtual std::string actionOptions() const;
+  virtual std::string getItemList(int mode) const;
 
   /*
    * Function: turnUpdate

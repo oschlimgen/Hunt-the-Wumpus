@@ -76,6 +76,11 @@ GameUpdate::GameUpdate(const int type, Player* const player,
 GameUpdate::GameUpdate(const int type, Player* const player,
     Event* const event, const int info) : type(type), targetPlayer(player),
     targetEvent(event), info(info) {}
+GameUpdate::GameUpdate(const int type, Player* const player,
+    Event* const event, const std::string& message) :
+    type(type), targetPlayer(player), targetEvent(event),
+    targetTrigger(new InfoTrigger(message)),
+    toDelete(WhatToDelete::TargetEvent) {}
 
 GameUpdate::GameUpdate(const int type, Player* const player,
     Trigger* const trigger) : type(type), targetPlayer(player),
@@ -83,6 +88,10 @@ GameUpdate::GameUpdate(const int type, Player* const player,
 GameUpdate::GameUpdate(const int type, Player* const player,
     Trigger* const trigger, const int info) : type(type), info(info),
     targetPlayer(player), targetTrigger(trigger) {}
+GameUpdate::GameUpdate(const int type, Player* const player,
+    Trigger* const trigger, const std::string& message) :
+    type(type), targetPlayer(player), targetEvent(new InfoEvent(message)),
+    targetTrigger(trigger), toDelete(WhatToDelete::TargetEvent) {}
 
 
 GameUpdate::GameUpdate(int type, Event* event, const std::string& message) :
